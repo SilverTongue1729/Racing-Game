@@ -1,0 +1,5 @@
+package-lock.json
+node_modules/
+dist/main.js
+dist/main.js.map
+dist/main.js.LICENSE.txt
