@@ -1,114 +1,218 @@
-// import * as THREE from 'three';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-// // Create a Three.js scene
-// const scene = new THREE.Scene();
+const aspect = window.innerWidth / window.innerHeight;
+let insetWidth, insetHeight;
 
-// scene.background = new THREE.Color(0x87ceeb); // set background to sky blue color
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb); // set background to sky blue color
 
-// // Create a camera and position it above the center of the race track
-// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-// camera.position.set(0, 50, 50);
-// camera.lookAt(0, 0, 0);
+let camera = new THREE.PerspectiveCamera(70, aspect, 0.01, 500);
+camera.position.z = 55;
+camera.lookAt(0, 0, 0);
+camera.name = 'PlayerCam';
 
-// // Create a renderer and set its size to the window dimensions
-// const renderer = new THREE.WebGLRenderer();
-// renderer.setSize(window.innerWidth, window.innerHeight);
-// renderer.setClearColor(0x87ceeb); // set clear color to sky blue
-// document.body.appendChild(renderer.domElement);
+var camera_top = new THREE.PerspectiveCamera(90, aspect, 0.1, 500);
+camera_top.position.z = 35;
+camera_top.lookAt(0, 0, 0);
+camera_top.name = 'OverheadCam';
 
-// // Create a circular race track
-// const radius = 20; // set the radius of the track
-// const segments = 64; // set the number of segments in the circle
-// const geometry = new THREE.CircleGeometry(radius, segments);
-// const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
-// const circle = new THREE.Mesh(geometry, material);
-// scene.add(circle);
+// camera.add(camera_top);
+// scene.add(camera);
+// scene.add(camera_top);
 
-// // Add some lights to the scene
-// const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-// scene.add(ambientLight);
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-// const pointLight = new THREE.PointLight(0xffffff, 1);
-// pointLight.position.set(0, 100, 0);
-// scene.add(pointLight);  
+// var renderer_top = new THREE.WebGLRenderer();
+// renderer_top.setSize(200,200);
+// renderer_top.setViewport(0, window.innerHeight - 200, 200, 200);
+// document.body.appendChild(renderer_top.domElement);
 
-// // Render the scene
-// function animate () {
-//   requestAnimationFrame(animate);
-//   renderer.render(scene, camera);
-// }
+const light = new THREE.AmbientLight(); // soft white light
+scene.add(light);
 
-// animate();
+// ====================== STADIUM =========================================
+const uvs = [
+  1, 0,
+  0, 0,
+  0, 1,
+  1, 1,
+];
+
+var textureLoader = new THREE.TextureLoader();
+var texture = textureLoader.load('images/crowd.jpg');
+var material = new THREE.MeshBasicMaterial({ map: texture });
+var rectangle;
+var geometry;
+
+const len = 30;
+const h_f = 0.4;
+const l_f = 1.75;
+
+var positions = [
+  [
+    len, len, 0,
+    len, -len, 0,
+    len * l_f, -len * l_f, len * h_f,
+    len * l_f, len * l_f, len * h_f,
+  ],
+  [
+    -len, len, 0,
+    len, len, 0,
+    len * l_f, len * l_f, len * h_f,
+    -len * l_f, len * l_f, len * h_f,
+  ],
+  [
+    -len, -len, 0,
+    -len, len, 0,
+    -len * l_f, len * l_f, len * h_f,
+    -len * l_f, -len * l_f, len * h_f,
+  ],
+  [
+    len, -len, 0,
+    -len, -len, 0,
+    -len * l_f, -len * l_f, len * h_f,
+    len * l_f, -len * l_f, len * h_f,
+  ],
+];
+
+for (let i = 0; i < 4; i++) {
+  geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions[i]), 3));
+  geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
+  geometry.setIndex([0, 1, 2, 0, 2, 3]);
+
+  rectangle = new THREE.Mesh(geometry, material);
+  scene.add(rectangle);
+}
+// ====================== STADIUM /=========================================
+// ====================== FIELD =========================================
+
+// create a new plane geometry with width 10 and height 5
+geometry = new THREE.PlaneGeometry(2 * len, 2 * len);
+material = new THREE.MeshBasicMaterial({ color: 0x11ff11 });
+rectangle = new THREE.Mesh(geometry, material);
+scene.add(rectangle);
+
+// TRACK
+const track_width = 10;
+const boundary = 2;
+
+geometry = new THREE.CircleGeometry(len - boundary, 50);
+material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+var circle = new THREE.Mesh(geometry, material);
+scene.add(circle);
+
+geometry = new THREE.CircleGeometry(len - boundary - track_width, 50);
+material = new THREE.MeshBasicMaterial({ color: 0x11ff11 });
+circle = new THREE.Mesh(geometry, material);
+scene.add(circle);
+
+// ====================== FIELD /=========================================
 
 
+var loader = new GLTFLoader();
+loader.load('models/mcqueen/scene.gltf',
+  (gltf) => {
 
-// === === === === === === === === === === === === === === === === === === === === === === === === === === === 
-// === === === === === === === === === === === === === === === === === === === === === === === === === === === 
-// === === === === === === === === === === === === === === === === === === === === === === === === === === === 
-// === === === === === === === === === === === === === === === === === === === === === === === === === === === 
-// import * as THREE from 'three';
-// // import texture from '../images/background.jpg';
+    gltf.scene.position.set(0, 0, 0);
+    console.log("scene", scene);
+    // console.log("mesh", mesh);
 
-// const scene = new THREE.Scene();
-// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // Position the camera to view the model
+    var box = new THREE.Box3().setFromObject(gltf.scene);
+    gltf.scene.scale.set((2 / Math.abs(box.max.x - box.min.x)), (1 / Math.abs(box.max.y - box.min.y)), (4 / Math.abs(box.max.z - box.min.z)));
+    box = new THREE.Box3().setFromObject(gltf.scene);
+    // log all the scale factors
+    console.log("scale factors: ", (2 / Math.abs(box.max.x - box.min.x)), (1 / Math.abs(box.max.y - box.min.y)), (4 / Math.abs(box.max.z - box.min.z)));
 
-// const renderer = new THREE.WebGLRenderer();
-// renderer.setSize(window.innerWidth, window.innerHeight);
-// document.body.appendChild(renderer.domElement);
+    var center = box.getCenter(new THREE.Vector3());
+    gltf.scene.position.set(-center.x, -center.y, -center.z);
+    // camera.position.set(center.x, center.y, box.max.z + 1);
+    console.log("center", center);
+    console.log("box", box);
+    // log the dimensions of the bounding box of the model
+    console.log("dimensions: ", box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
 
-// // Load the stadium texture
-// const textureLoader = new THREE.TextureLoader();
-// const stadiumTexture = textureLoader.load('images/background.jpg');
 
-// // Create a material using the texture
-// const material = new THREE.MeshBasicMaterial({ map: stadiumTexture });
+    // camera.lookAt(center);
 
-// // Create the points that define the shape of the stadium
-// const points = [
-//   new THREE.Vector3(0, 0, 0),
-//   new THREE.Vector3(10, 0, 0),
-//   new THREE.Vector3(15, 10, 0),
-//   new THREE.Vector3(15, 20, 0),
-//   new THREE.Vector3(10, 30, 0),
-//   new THREE.Vector3(0, 30, 0),
-//   new THREE.Vector3(-5, 20, 0),
-//   new THREE.Vector3(-5, 10, 0),
-//   new THREE.Vector3(0, 0, 0)
-// ];
+    scene.add(gltf.scene);
+  },
+  (xhr) => {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+  },
+  (error) => {
+    console.error('Error loading GLTF model', error);
+  });
 
-// // Create a buffer geometry for the stadium
-// const geometry = new THREE.BufferGeometry().setFromPoints(points);
+// Listen for keydown events
+document.addEventListener('keydown', function (event) {
+  switch (event.key) {
+    case 'ArrowLeft':
+      camera.position.x -= 0.6;
+      break;
+    case 'ArrowRight':
+      camera.position.x += 0.6;
+      break;
+    case 'ArrowUp':
+      camera.position.y += 0.6;
+      break;
+    case 'ArrowDown':
+      camera.position.y -= 0.6;
+      break;
+    case 'a':
+      camera.position.z += 0.6;
+      break;
+    case 'z':
+      camera.position.z -= 0.6;
+      break;
+  }
+});
 
-// // Set the height of the stadium
-// const height = 30;
 
-// // Extrude the shape to create a 3D object
-// const extrudeSettings = {
-//   steps: 1,
-//   depth: height,
-//   bevelEnabled: false
-// };
-// const extrudeGeometry = new THREE.ExtrudeGeometry(geometry, extrudeSettings);
-// const stadium = new THREE.Mesh(extrudeGeometry, material);
+resize();
 
-// // Position the stadium
-// stadium.position.set(0, -height / 2, 0);
+animate();
 
-// // Add the stadium to the scene
-// scene.add(stadium);
+function resize () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
-// // Add some lights to the scene
-// const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-// scene.add(ambientLight);
+  insetWidth = 300;
+  insetHeight = 300;
 
-// const pointLight = new THREE.PointLight(0xffffff, 0.5);
-// pointLight.position.set(0, 100, 0);
-// scene.add(pointLight);
+  camera_top.aspect = 1;
+  camera_top.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
 
-// // Render the scene
-// function animate () {
-//   requestAnimationFrame(animate);
-//   renderer.render(scene, camera);
-// }
+function animate () {
+  requestAnimationFrame(animate);
 
-// animate();
+  renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+  renderer.render(scene, camera);
+
+  renderer.clearDepth();
+  renderer.setScissorTest(true);
+  renderer.setScissor(
+    window.innerWidth - insetWidth - 16,
+    window.innerHeight - insetHeight - 16,
+    insetWidth,
+    insetHeight
+  );
+  renderer.setViewport(
+    window.innerWidth - insetWidth - 16,
+    window.innerHeight - insetHeight - 16,
+    insetWidth,
+    insetHeight
+  );
+
+  renderer.render(scene, camera_top);
+  renderer.setScissorTest(false);
+  // console.log("camera z", camera.position.z);
+}
+

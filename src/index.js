@@ -1,32 +1,41 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-var scene = new THREE.Scene();
+//======================= GAME STATS =========================================
+let health = 100;
+let fuel = 100;
+let score = 0;
+let time = 0;
+//======================= GAME STATS /=========================================
+//======================= CAMERA =========================================
+const aspect = window.innerWidth / window.innerHeight;
+let insetWidth, insetHeight;
+
+const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb); // set background to sky blue color
 
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+let camera = new THREE.PerspectiveCamera(70, aspect, 0.01, 500);
 camera.position.z = 55;
 camera.lookAt(0, 0, 0);
+camera.name = 'PlayerCam';
+
+var camera_top = new THREE.PerspectiveCamera(90, aspect, 0.1, 500);
+camera_top.position.set(0, 0, -30);
+camera_top.lookAt(0, 0, -55);
+camera_top.name = 'OverheadCam';
+
+camera.add(camera_top);
+scene.add(camera);
+// scene.add(camera_top);
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// var camera_top = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-var camera_top = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
-camera_top.position.z = 45;
-camera_top.lookAt(0, 0, 0);
-
-var renderer_top = new THREE.WebGLRenderer();
-renderer_top.setSize(200,200);
-renderer_top.setViewport(0, window.innerHeight - 200, 200, 200);
-document.body.appendChild(renderer_top.domElement);
-
 const light = new THREE.AmbientLight(); // soft white light
 scene.add(light);
-
-// ====================== STADIUM =========================================
-
+//======================= CAMERA /=========================================
+//======================= CROWD =========================================
 const uvs = [
   1, 0,
   0, 0,
@@ -72,7 +81,6 @@ var positions = [
 ];
 
 for (let i = 0; i < 4; i++) {
-
   geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions[i]), 3));
   geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
@@ -81,17 +89,13 @@ for (let i = 0; i < 4; i++) {
   rectangle = new THREE.Mesh(geometry, material);
   scene.add(rectangle);
 }
-
-// ====================== STADIUM /=========================================
-// ====================== FIELD =========================================
-
-// create a new plane geometry with width 10 and height 5
+//======================= CROWD /=========================================
+//======================= FIELD =========================================
 geometry = new THREE.PlaneGeometry(2 * len, 2 * len);
 material = new THREE.MeshBasicMaterial({ color: 0x11ff11 });
 rectangle = new THREE.Mesh(geometry, material);
 scene.add(rectangle);
 
-// TRACK
 const track_width = 10;
 const boundary = 2;
 
@@ -104,8 +108,7 @@ geometry = new THREE.CircleGeometry(len - boundary - track_width, 50);
 material = new THREE.MeshBasicMaterial({ color: 0x11ff11 });
 circle = new THREE.Mesh(geometry, material);
 scene.add(circle);
-
-// ====================== FIELD /=========================================
+//======================= FIELD /=========================================
 
 
 var loader = new GLTFLoader();
@@ -167,12 +170,45 @@ document.addEventListener('keydown', function (event) {
   }
 });
 
+resize();
+animate();
+
+function resize () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  insetWidth = 300;
+  insetHeight = 300;
+
+  camera_top.aspect = 1;
+  camera_top.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
 function animate () {
   requestAnimationFrame(animate);
-  camera.lookAt(0, 0, 0);
+
+  renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
   renderer.render(scene, camera);
-  renderer_top.render(scene, camera_top);
+
+  renderer.clearDepth();
+  renderer.setScissorTest(true);
+  renderer.setScissor(
+    window.innerWidth - insetWidth - 16,
+    window.innerHeight - insetHeight - 16,
+    insetWidth,
+    insetHeight
+  );
+  renderer.setViewport(
+    window.innerWidth - insetWidth - 16,
+    window.innerHeight - insetHeight - 16,
+    insetWidth,
+    insetHeight
+  );
+
+  renderer.render(scene, camera_top);
+  renderer.setScissorTest(false);
   // console.log("camera z", camera.position.z);
 }
 
-animate();
